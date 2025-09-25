@@ -1,343 +1,488 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
-#define MAX_JOGADORES 100
-#define TAM_NOME 50
+#define MAX_ITENS 20
+#define TAM_NOME 30
+#define TAM_TIPO 20
 
+// Estrutura base do item
 typedef struct {
     char nome[TAM_NOME];
-    int pontuacao;
-    int posicao;
-} Jogador;
+    char tipo[TAM_TIPO];
+    int quantidade;
+} Item;
 
-// Estrutura para lista encadeada
+// Nó para lista encadeada
 typedef struct No {
-    Jogador jogador;
+    Item dados;
     struct No* proximo;
 } No;
 
-// Variáveis globais
-Jogador rankingVetor[MAX_JOGADORES];
-No* rankingLista = NULL;
-int totalJogadores = 0;
+// Contadores globais para comparações
+int comparacoesSequencial = 0;
+int comparacoesBinaria = 0;
+
+// ========== IMPLEMENTAÇÃO COM VETOR ==========
+
+Item mochilaVetor[MAX_ITENS];
+int totalItensVetor = 0;
 
 void limparBuffer() {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
 }
 
-void pausar() {
-    printf("\nPressione Enter para continuar....");
-    limparBuffer();
-}
-
-// =========== FUNÇÕES BÁSICAS ===========
-
-void cadastrarJogador() {
-    if (totalJogadores >= MAX_JOGADORES) {
-        printf("Limite máximo de jogadores atingido!\n");
+void inserirItemVetor() {
+    if (totalItensVetor >= MAX_ITENS) {
+        printf("❌ Mochila (vetor) cheia! Limite: %d itens\n", MAX_ITENS);
         return;
     }
     
-    printf("\n--- NOVO JOGADOR ---\n");
-    
+    printf("\n📦 ADICIONAR ITEM - VETOR\n");
     printf("Nome: ");
-    fgets(rankingVetor[totalJogadores].nome, TAM_NOME, stdin);
-    rankingVetor[totalJogadores].nome[strcspn(rankingVetor[totalJogadores].nome, "\n")] = '\0';
+    fgets(mochilaVetor[totalItensVetor].nome, TAM_NOME, stdin);
+    mochilaVetor[totalItensVetor].nome[strcspn(mochilaVetor[totalItensVetor].nome, "\n")] = '\0';
     
-    printf("Pontuação: ");
-    scanf("%d", &rankingVetor[totalJogadores].pontuacao);
+    printf("Tipo (arma, municao, cura, ferramenta): ");
+    fgets(mochilaVetor[totalItensVetor].tipo, TAM_TIPO, stdin);
+    mochilaVetor[totalItensVetor].tipo[strcspn(mochilaVetor[totalItensVetor].tipo, "\n")] = '\0';
+    
+    printf("Quantidade: ");
+    scanf("%d", &mochilaVetor[totalItensVetor].quantidade);
     limparBuffer();
     
-    totalJogadores++;
-    printf("Jogador cadastrado com sucesso!\n");
+    totalItensVetor++;
+    printf("✅ Item adicionado ao vetor! Total: %d/%d\n", totalItensVetor, MAX_ITENS);
 }
 
-void ordenarRanking() {
-    // Ordenação simples por pontuação (decrescente)
-    for (int i = 0; i < totalJogadores - 1; i++) {
-        for (int j = i + 1; j < totalJogadores; j++) {
-            if (rankingVetor[i].pontuacao < rankingVetor[j].pontuacao) {
-                Jogador temp = rankingVetor[i];
-                rankingVetor[i] = rankingVetor[j];
-                rankingVetor[j] = temp;
-            }
-        }
-    }
-    
-    // Atualizar posições
-    for (int i = 0; i < totalJogadores; i++) {
-        rankingVetor[i].posicao = i + 1;
-    }
-}
-
-void mostrarRanking() {
-    ordenarRanking();
-    
-    printf("\n🏆 RANKING OFICIAL 🏆\n");
-    printf("=====================\n");
-    
-    if (totalJogadores == 0) {
-        printf("Nenhum jogador cadastrado ainda.\n");
-        return;
-    }
-    
-    for (int i = 0; i < totalJogadores; i++) {
-        char medalha[10] = "";
-        if (i == 0) strcpy(medalha, "🥇");
-        else if (i == 1) strcpy(medalha, "🥈");
-        else if (i == 2) strcpy(medalha, "🥉");
-        
-        printf("%s %d. %s - %d pontos\n", 
-               medalha, rankingVetor[i].posicao, 
-               rankingVetor[i].nome, rankingVetor[i].pontuacao);
-    }
-}
-
-void removerJogador() {
-    if (totalJogadores == 0) {
-        printf("Não há jogadores para remover!\n");
+void removerItemVetor() {
+    if (totalItensVetor == 0) {
+        printf("❌ Mochila (vetor) vazia!\n");
         return;
     }
     
     char nome[TAM_NOME];
-    printf("\nDigite o nome do jogador a remover: ");
+    printf("\n🗑️  REMOVER ITEM - VETOR\n");
+    printf("Nome do item a remover: ");
     fgets(nome, TAM_NOME, stdin);
     nome[strcspn(nome, "\n")] = '\0';
     
-    int encontrado = -1;
-    for (int i = 0; i < totalJogadores; i++) {
-        if (strcmp(rankingVetor[i].nome, nome) == 0) {
-            encontrado = i;
+    int posicao = -1;
+    for (int i = 0; i < totalItensVetor; i++) {
+        if (strcmp(mochilaVetor[i].nome, nome) == 0) {
+            posicao = i;
             break;
         }
     }
     
-    if (encontrado == -1) {
-        printf("Jogador não encontrado!\n");
+    if (posicao == -1) {
+        printf("❌ Item não encontrado no vetor!\n");
         return;
     }
     
     // Remove deslocando os elementos
-    for (int i = encontrado; i < totalJogadores - 1; i++) {
-        rankingVetor[i] = rankingVetor[i + 1];
+    for (int i = posicao; i < totalItensVetor - 1; i++) {
+        mochilaVetor[i] = mochilaVetor[i + 1];
     }
     
-    totalJogadores--;
-    printf("Jogador removido com sucesso!\n");
+    totalItensVetor--;
+    printf("✅ Item removido do vetor! Total: %d/%d\n", totalItensVetor, MAX_ITENS);
 }
 
-// ========== ALGORITMOS DE BUSCA ==========
-
-void buscaSequencial() {
-    if (totalJogadores == 0) {
-        printf("Não há jogadores cadastrados!\n");
+void listarItensVetor() {
+    printf("\n🎒 MOCHILA (VETOR) - %d itens\n", totalItensVetor);
+    printf("================================\n");
+    
+    if (totalItensVetor == 0) {
+        printf("Mochila vazia!\n");
         return;
     }
     
-    char nome[TAM_NOME];
-    printf("Digite o nome para busca sequencial: ");
-    fgets(nome, TAM_NOME, stdin);
-    nome[strcspn(nome, "\n")] = '\0';
-    
-    clock_t inicio = clock();
-    int encontrados = 0;
-    
-    printf("\n🔍 BUSCA SEQUENCIAL:\n");
-    for (int i = 0; i < totalJogadores; i++) {
-        if (strstr(rankingVetor[i].nome, nome) != NULL) {
-            printf("✓ %s - %d pontos (Posição: %d)\n", 
-                   rankingVetor[i].nome, rankingVetor[i].pontuacao, rankingVetor[i].posicao);
-            encontrados++;
-        }
+    for (int i = 0; i < totalItensVetor; i++) {
+        printf("%d. %-15s | %-12s | Qtd: %d\n", 
+               i + 1, mochilaVetor[i].nome, mochilaVetor[i].tipo, mochilaVetor[i].quantidade);
     }
-    
-    clock_t fim = clock();
-    double tempo = ((double)(fim - inicio)) / CLOCKS_PER_SEC * 1000;
-    
-    printf("Tempo: %.4f ms | Encontrados: %d\n", tempo, encontrados);
 }
 
-int buscaBinariaRecursiva(int inicio, int fim, char* nome) {
-    if (inicio > fim) return -1;
-    
-    int meio = (inicio + fim) / 2;
-    int comparacao = strcmp(rankingVetor[meio].nome, nome);
-    
-    if (comparacao == 0) return meio;
-    if (comparacao < 0) return buscaBinariaRecursiva(meio + 1, fim, nome);
-    return buscaBinariaRecursiva(inicio, meio - 1, nome);
-}
-
-void buscaBinariaIterativa() {
-    if (totalJogadores == 0) {
-        printf("Não há jogadores cadastrados!\n");
+void ordenarVetor() {
+    if (totalItensVetor < 2) {
+        printf("ℹ️  Poucos itens para ordenar\n");
         return;
     }
     
-    // Ordenar por nome para busca binária
-    for (int i = 0; i < totalJogadores - 1; i++) {
-        for (int j = i + 1; j < totalJogadores; j++) {
-            if (strcmp(rankingVetor[i].nome, rankingVetor[j].nome) > 0) {
-                Jogador temp = rankingVetor[i];
-                rankingVetor[i] = rankingVetor[j];
-                rankingVetor[j] = temp;
+    // Bubble Sort por nome
+    for (int i = 0; i < totalItensVetor - 1; i++) {
+        for (int j = 0; j < totalItensVetor - i - 1; j++) {
+            if (strcmp(mochilaVetor[j].nome, mochilaVetor[j + 1].nome) > 0) {
+                Item temp = mochilaVetor[j];
+                mochilaVetor[j] = mochilaVetor[j + 1];
+                mochilaVetor[j + 1] = temp;
             }
         }
     }
     
-    char nome[TAM_NOME];
-    printf("Digite o nome exato para busca binária: ");
-    fgets(nome, TAM_NOME, stdin);
-    nome[strcspn(nome, "\n")] = '\0';
+    printf("✅ Vetor ordenado por nome!\n");
+}
+
+int buscarSequencialVetor(char* nome) {
+    comparacoesSequencial = 0;
     
-    clock_t inicio = clock();
-    
-    int esquerda = 0, direita = totalJogadores - 1;
-    int encontrado = -1;
+    for (int i = 0; i < totalItensVetor; i++) {
+        comparacoesSequencial++;
+        if (strcmp(mochilaVetor[i].nome, nome) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int buscarBinariaVetor(char* nome) {
+    comparacoesBinaria = 0;
+    int esquerda = 0, direita = totalItensVetor - 1;
     
     while (esquerda <= direita) {
+        comparacoesBinaria++;
         int meio = (esquerda + direita) / 2;
-        int comparacao = strcmp(rankingVetor[meio].nome, nome);
+        int resultado = strcmp(mochilaVetor[meio].nome, nome);
         
-        if (comparacao == 0) {
-            encontrado = meio;
-            break;
-        }
-        if (comparacao < 0) {
-            esquerda = meio + 1;
-        } else {
-            direita = meio - 1;
-        }
+        if (resultado == 0) return meio;
+        if (resultado < 0) esquerda = meio + 1;
+        else direita = meio - 1;
     }
-    
-    clock_t fim = clock();
-    double tempo = ((double)(fim - inicio)) / CLOCKS_PER_SEC * 1000;
-    
-    printf("\n🔍 BUSCA BINÁRIA ITERATIVA:\n");
-    if (encontrado != -1) {
-        printf("✓ %s - %d pontos\n", 
-               rankingVetor[encontrado].nome, rankingVetor[encontrado].pontuacao);
-    } else {
-        printf("Jogador não encontrado.\n");
-    }
-    printf("Tempo: %.4f ms\n", tempo);
+    return -1;
 }
 
-// ========== COMPARAÇÃO DE ESTRUTURAS ==========
+// ========== IMPLEMENTAÇÃO COM LISTA ENCADEADA ==========
 
-void compararEstruturas() {
-    printf("\n📊 COMPARAÇÃO DE ESTRUTURAS\n");
-    printf("===========================\n");
-    
-    printf("VETOR:\n");
-    printf("- Vantagens: Acesso rápido por índice, cache-friendly\n");
-    printf("- Desvantagens: Tamanho fixo, inserção/remoção custosa\n");
-    printf("- Uso ideal: Quando há muitas buscas e poucas modificações\n\n");
-    
-    printf("LISTA ENCADEADA:\n");
-    printf("- Vantagens: Tamanho dinâmico, inserção/remoção eficiente\n");
-    printf("- Desvantagens: Acesso sequencial, overhead de ponteiros\n");
-    printf("- Uso ideal: Quando há muitas inserções/remoções\n");
-}
+No* mochilaLista = NULL;
+int totalItensLista = 0;
 
-void testeDesempenho() {
-    if (totalJogadores < 3) {
-        printf("Cadastre pelo menos 3 jogadores para o teste de desempenho.\n");
+void inserirItemLista() {
+    if (totalItensLista >= MAX_ITENS) {
+        printf("❌ Mochila (lista) cheia! Limite: %d itens\n", MAX_ITENS);
         return;
     }
     
-    printf("\n⚡ TESTE DE DESEMPENHO\n");
-    printf("=====================\n");
+    No* novoNo = (No*)malloc(sizeof(No));
+    if (!novoNo) {
+        printf("❌ Erro de memória!\n");
+        return;
+    }
+    
+    printf("\n📦 ADICIONAR ITEM - LISTA\n");
+    printf("Nome: ");
+    fgets(novoNo->dados.nome, TAM_NOME, stdin);
+    novoNo->dados.nome[strcspn(novoNo->dados.nome, "\n")] = '\0';
+    
+    printf("Tipo (arma, municao, cura, ferramenta): ");
+    fgets(novoNo->dados.tipo, TAM_TIPO, stdin);
+    novoNo->dados.tipo[strcspn(novoNo->dados.tipo, "\n")] = '\0';
+    
+    printf("Quantidade: ");
+    scanf("%d", &novoNo->dados.quantidade);
+    limparBuffer();
+    
+    // Insere no início (mais eficiente)
+    novoNo->proximo = mochilaLista;
+    mochilaLista = novoNo;
+    totalItensLista++;
+    
+    printf("✅ Item adicionado à lista! Total: %d/%d\n", totalItensLista, MAX_ITENS);
+}
+
+void removerItemLista() {
+    if (totalItensLista == 0) {
+        printf("❌ Mochila (lista) vazia!\n");
+        return;
+    }
+    
+    char nome[TAM_NOME];
+    printf("\n🗑️  REMOVER ITEM - LISTA\n");
+    printf("Nome do item a remover: ");
+    fgets(nome, TAM_NOME, stdin);
+    nome[strcspn(nome, "\n")] = '\0';
+    
+    No* atual = mochilaLista;
+    No* anterior = NULL;
+    
+    while (atual != NULL) {
+        if (strcmp(atual->dados.nome, nome) == 0) {
+            if (anterior == NULL) {
+                // Remove do início
+                mochilaLista = atual->proximo;
+            } else {
+                // Remove do meio/fim
+                anterior->proximo = atual->proximo;
+            }
+            
+            free(atual);
+            totalItensLista--;
+            printf("✅ Item removido da lista! Total: %d/%d\n", totalItensLista, MAX_ITENS);
+            return;
+        }
+        anterior = atual;
+        atual = atual->proximo;
+    }
+    
+    printf("❌ Item não encontrado na lista!\n");
+}
+
+void listarItensLista() {
+    printf("\n🎒 MOCHILA (LISTA ENCADEADA) - %d itens\n", totalItensLista);
+    printf("======================================\n");
+    
+    if (totalItensLista == 0) {
+        printf("Mochila vazia!\n");
+        return;
+    }
+    
+    No* atual = mochilaLista;
+    int posicao = 1;
+    
+    while (atual != NULL) {
+        printf("%d. %-15s | %-12s | Qtd: %d\n", 
+               posicao, atual->dados.nome, atual->dados.tipo, atual->dados.quantidade);
+        atual = atual->proximo;
+        posicao++;
+    }
+}
+
+int buscarSequencialLista(char* nome) {
+    comparacoesSequencial = 0;
+    No* atual = mochilaLista;
+    int posicao = 0;
+    
+    while (atual != NULL) {
+        comparacoesSequencial++;
+        if (strcmp(atual->dados.nome, nome) == 0) {
+            return posicao;
+        }
+        atual = atual->proximo;
+        posicao++;
+    }
+    return -1;
+}
+
+// ========== COMPARAÇÃO DE DESEMPENHO ==========
+
+void testarBuscaSequencial() {
+    if (totalItensVetor == 0) {
+        printf("❌ Adicione itens ao vetor primeiro!\n");
+        return;
+    }
+    
+    char nome[TAM_NOME];
+    printf("\n🔍 TESTE BUSCA SEQUENCIAL\n");
+    printf("Nome para buscar: ");
+    fgets(nome, TAM_NOME, stdin);
+    nome[strcspn(nome, "\n")] = '\0';
+    
+    // Teste no vetor
+    clock_t inicio = clock();
+    int posVetor = buscarSequencialVetor(nome);
+    clock_t fim = clock();
+    double tempoVetor = ((double)(fim - inicio)) / CLOCKS_PER_SEC * 1000;
+    
+    // Teste na lista
+    inicio = clock();
+    int posLista = buscarSequencialLista(nome);
+    fim = clock();
+    double tempoLista = ((double)(fim - inicio)) / CLOCKS_PER_SEC * 1000;
+    
+    printf("\n📊 RESULTADOS BUSCA SEQUENCIAL\n");
+    printf("VETOR: %d comparações | %.4f ms | ", comparacoesSequencial, tempoVetor);
+    printf(posVetor != -1 ? "Encontrado na posição %d\n" : "Não encontrado\n", posVetor + 1);
+    
+    printf("LISTA: %d comparações | %.4f ms | ", comparacoesSequencial, tempoLista);
+    printf(posLista != -1 ? "Encontrado na posição %d\n" : "Não encontrado\n", posLista + 1);
+}
+
+void testarBuscaBinaria() {
+    if (totalItensVetor == 0) {
+        printf("❌ Adicione itens ao vetor primeiro!\n");
+        return;
+    }
+    
+    if (totalItensVetor < 2) {
+        printf("ℹ️  Adicione mais itens para testar busca binária\n");
+        return;
+    }
+    
+    char nome[TAM_NOME];
+    printf("\n🔍 TESTE BUSCA BINÁRIA (apenas vetor)\n");
+    printf("Nome para buscar: ");
+    fgets(nome, TAM_NOME, stdin);
+    nome[strcspn(nome, "\n")] = '\0';
+    
+    // Ordena primeiro
+    ordenarVetor();
     
     // Teste busca sequencial
     clock_t inicioSeq = clock();
-    for (int i = 0; i < 1000; i++) {
-        // Busca fictícia para teste
-        for (int j = 0; j < totalJogadores; j++) {
-            if (strlen(rankingVetor[j].nome) > 0) {
-                // Simula operação de busca
-            }
-        }
-    }
+    int posSeq = buscarSequencialVetor(nome);
     clock_t fimSeq = clock();
+    double tempoSeq = ((double)(fimSeq - inicioSeq)) / CLOCKS_PER_SEC * 1000;
     
     // Teste busca binária
     clock_t inicioBin = clock();
-    for (int i = 0; i < 1000; i++) {
-        int esq = 0, dir = totalJogadores - 1;
-        while (esq <= dir) {
-            int meio = (esq + dir) / 2;
-            esq = meio + 1; // Simulação simplificada
-        }
-    }
+    int posBin = buscarBinariaVetor(nome);
     clock_t fimBin = clock();
-    
-    double tempoSeq = ((double)(fimSeq - inicioSeq)) / CLOCKS_PER_SEC * 1000;
     double tempoBin = ((double)(fimBin - inicioBin)) / CLOCKS_PER_SEC * 1000;
     
-    printf("Busca Sequencial (1000 iterações): %.2f ms\n", tempoSeq);
-    printf("Busca Binária (1000 iterações): %.2f ms\n", tempoBin);
-    printf("Diferença: %.2f ms\n", tempoSeq - tempoBin);
+    printf("\n📊 COMPARAÇÃO BUSCA SEQUENCIAL vs BINÁRIA\n");
+    printf("SEQUENCIAL: %d comparações | %.4f ms | ", comparacoesSequencial, tempoSeq);
+    printf(posSeq != -1 ? "Encontrado\n" : "Não encontrado\n");
     
-    if (tempoBin < tempoSeq) {
-        printf("✅ Busca binária foi mais rápida!\n");
-    } else {
-        printf("⚠️  Busca sequencial foi mais rápida (poucos dados)\n");
+    printf("BINÁRIA:    %d comparações | %.4f ms | ", comparacoesBinaria, tempoBin);
+    printf(posBin != -1 ? "Encontrado\n" : "Não encontrado\n");
+    
+    if (posBin != -1) {
+        printf("🎯 Busca binária foi %dx mais eficiente!\n", 
+               comparacoesSequencial / (comparacoesBinaria > 0 ? comparacoesBinaria : 1));
     }
 }
 
+void compararEstruturas() {
+    printf("\n📈 ANÁLISE COMPARATIVA DAS ESTRUTURAS\n");
+    printf("====================================\n");
+    
+    printf("\n🏆 VETOR (Lista Sequencial):\n");
+    printf("✅ Vantagens:\n");
+    printf("   - Acesso rápido por índice (O(1))\n");
+    printf("   - Cache-friendly (dados contíguos)\n");
+    printf("   - Busca binária possível após ordenação\n");
+    printf("❌ Desvantagens:\n");
+    printf("   - Tamanho fixo\n");
+    printf("   - Inserção/remoção custosa (O(n))\n");
+    printf("   - Redimensionamento complexo\n");
+    
+    printf("\n🏆 LISTA ENCADEADA:\n");
+    printf("✅ Vantagens:\n");
+    printf("   - Tamanho dinâmico\n");
+    printf("   - Inserção/remoção eficiente (O(1) no início)\n");
+    printf("   - Não precisa realocação\n");
+    printf("❌ Desvantagens:\n");
+    printf("   - Acesso sequencial (O(n))\n");
+    printf("   - Overhead de memória (ponteiros)\n");
+    printf("   - Não permite busca binária\n");
+    
+    printf("\n💡 RECOMENDAÇÃO:\n");
+    printf("Use VETOR quando: Muitas buscas, poucas inserções/remoções\n");
+    printf("Use LISTA quando: Muitas inserções/remoções, poucas buscas\n");
+}
+
+// ========== MENUS E INTERFACE ==========
+
+void menuVetor() {
+    int opcao;
+    do {
+        printf("\n🎒 SISTEMA DE MOCHILA - VETOR\n");
+        printf("1. Adicionar item\n");
+        printf("2. Remover item\n");
+        printf("3. Listar itens\n");
+        printf("4. Ordenar por nome\n");
+        printf("5. Voltar ao menu principal\n");
+        printf("Escolha: ");
+        scanf("%d", &opcao);
+        limparBuffer();
+        
+        switch (opcao) {
+            case 1: inserirItemVetor(); break;
+            case 2: removerItemVetor(); break;
+            case 3: listarItensVetor(); break;
+            case 4: ordenarVetor(); break;
+            case 5: printf("Voltando...\n"); break;
+            default: printf("❌ Opção inválida!\n");
+        }
+    } while (opcao != 5);
+}
+
+void menuLista() {
+    int opcao;
+    do {
+        printf("\n🎒 SISTEMA DE MOCHILA - LISTA ENCADEADA\n");
+        printf("1. Adicionar item\n");
+        printf("2. Remover item\n");
+        printf("3. Listar itens\n");
+        printf("4. Voltar ao menu principal\n");
+        printf("Escolha: ");
+        scanf("%d", &opcao);
+        limparBuffer();
+        
+        switch (opcao) {
+            case 1: inserirItemLista(); break;
+            case 2: removerItemLista(); break;
+            case 3: listarItensLista(); break;
+            case 4: printf("Voltando...\n"); break;
+            default: printf("❌ Opção inválida!\n");
+        }
+    } while (opcao != 5);
+}
+
 void menuPrincipal() {
-    printf("\n🎮 SISTEMA DE RANKING - CAMPEONATO ONLINE 🎮\n");
-    printf("1. Cadastrar jogador\n");
-    printf("2. Ver ranking\n");
-    printf("3. Remover jogador\n");
-    printf("4. Busca sequencial (por nome)\n");
-    printf("5. Busca binária iterativa\n");
-    printf("6. Comparar estruturas\n");
-    printf("7. Teste de desempenho\n");
-    printf("8. Sair\n");
+    printf("\n🚀 SISTEMA DE COMPARAÇÃO - VETOR vs LISTA ENCADEADA\n");
+    printf("==================================================\n");
+    printf("1. Trabalhar com VETOR\n");
+    printf("2. Trabalhar com LISTA ENCADEADA\n");
+    printf("3. Testar busca sequencial (ambas estruturas)\n");
+    printf("4. Testar busca binária vs sequencial (vetor)\n");
+    printf("5. Comparar estruturas (análise teórica)\n");
+    printf("6. Sair\n");
     printf("Escolha: ");
 }
 
 int main() {
-    printf("Bem-vindo ao Sistema de Gerenciamento de Ranking!\n");
-    printf("Organize os melhores jogadores do campeonato...\n");
+    printf("Bem-vindo ao Sistema de Comparação de Estruturas!\n");
+    printf("Analise o desempenho de vetores vs listas encadeadas...\n");
+    
+    // Adiciona alguns itens de exemplo
+    strcpy(mochilaVetor[0].nome, "Rifle");
+    strcpy(mochilaVetor[0].tipo, "arma");
+    mochilaVetor[0].quantidade = 1;
+    totalItensVetor++;
+    
+    strcpy(mochilaVetor[1].nome, "Balas");
+    strcpy(mochilaVetor[1].tipo, "municao");
+    mochilaVetor[1].quantidade = 30;
+    totalItensVetor++;
+    
+    strcpy(mochilaVetor[2].nome, "Kit Cura");
+    strcpy(mochilaVetor[2].tipo, "cura");
+    mochilaVetor[2].quantidade = 2;
+    totalItensVetor++;
     
     int opcao;
-    
-    // Dados de exemplo
-    strcpy(rankingVetor[0].nome, "Ana_Silva");
-    rankingVetor[0].pontuacao = 2850;
-    strcpy(rankingVetor[1].nome, "Bruno_Santos");
-    rankingVetor[1].pontuacao = 3120;
-    strcpy(rankingVetor[2].nome, "Carlos_Oliveira");
-    rankingVetor[2].pontuacao = 2980;
-    totalJogadores = 3;
-    ordenarRanking();
-    
     do {
         menuPrincipal();
         scanf("%d", &opcao);
         limparBuffer();
         
         switch (opcao) {
-            case 1: cadastrarJogador(); break;
-            case 2: mostrarRanking(); break;
-            case 3: removerJogador(); break;
-            case 4: buscaSequencial(); break;
-            case 5: buscaBinariaIterativa(); break;
-            case 6: compararEstruturas(); break;
-            case 7: testeDesempenho(); break;
-            case 8: printf("Encerrando sistema... Até a próxima!\n"); break;
-            default: printf("Opção inválida!\n");
+            case 1: menuVetor(); break;
+            case 2: menuLista(); break;
+            case 3: testarBuscaSequencial(); break;
+            case 4: testarBuscaBinaria(); break;
+            case 5: compararEstruturas(); break;
+            case 6: printf("Encerrando sistema...\n"); break;
+            default: printf("❌ Opção inválida!\n");
         }
         
-        if (opcao != 8) pausar();
+        if (opcao != 6) {
+            printf("\nPressione Enter para continuar...");
+            limparBuffer();
+        }
         
-    } while (opcao != 8);
+    } while (opcao != 6);
+    
+    // Libera memória da lista
+    No* atual = mochilaLista;
+    while (atual != NULL) {
+        No* temp = atual;
+        atual = atual->proximo;
+        free(temp);
+    }
     
     return 0;
 }
